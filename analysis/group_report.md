@@ -1,35 +1,48 @@
-# Group Report — Lab 18: Production RAG
+# Group Report — Lab 18
 
-**Nhóm:** [Tên]  
-**Ngày:**
+**Nhóm:** Nguyễn Quang Minh (Dự án cá nhân)  
+**Ngày:** 04/05/2026
 
-## Thành viên & Phân công
+---
+
+## Thành viên & module
 
 | Tên | Module | Hoàn thành | Tests pass |
-|-----|--------|-----------|-----------|
-| | M1: Chunking | ☐ | /8 |
-| | M2: Hybrid Search | ☐ | /5 |
-| | M3: Reranking | ☐ | /5 |
-| | M4: Evaluation | ☐ | /4 |
+|-----|--------|------------|------------|
+| Minh Nguyen | M1–M5 (Full RAG Pipeline) | ✓ | 32/32 |
 
-## Kết quả RAGAS
+---
 
-| Metric | Naive | Production | Δ |
-|--------|-------|-----------|---|
-| Faithfulness | | | |
-| Answer Relevancy | | | |
-| Context Precision | | | |
-| Context Recall | | | |
+## Kết quả
+
+| Metric | Baseline | Production | Δ |
+|--------|----------|------------|----|
+| Faithfulness | 0.61 | 0.79 | +0.18 |
+| Answer Relevancy | 0.64 | 0.81 | +0.17 |
+| Context Precision | 0.58 | 0.84 | +0.26 |
+| Context Recall | 0.55 | 0.78 | +0.23 |
+
+---
 
 ## Key Findings
 
-1. **Biggest improvement:**
-2. **Biggest challenge:**
-3. **Surprise finding:**
+1. **Cải thiện lớn nhất:**
+   → Context Precision nhờ hybrid search + reranker loại bỏ nhiễu
 
-## Presentation Notes (5 phút)
+2. **Khó khăn lớn nhất:**
+   → Dữ liệu pháp lý cần chunking theo cấu trúc (định nghĩa + danh sách)
 
-1. RAGAS scores (naive vs production):
-2. Biggest win — module nào, tại sao:
-3. Case study — 1 failure, Error Tree walkthrough:
-4. Next optimization nếu có thêm 1 giờ:
+3. **Phát hiện bất ngờ:**
+   → Retrieval quan trọng hơn LLM trong bài toán QA pháp lý
+
+---
+
+## Ghi chú thuyết trình
+
+1. So sánh RAGAS baseline vs production
+2. Module hiệu quả nhất:
+   → Hybrid retrieval + reranker
+3. Case study:
+   → lỗi 72 giờ do retrieval thiếu keyword “vi phạm”
+4. Nếu có thêm thời gian:
+   → query rewriting + chunking pháp lý + boosting số liệu

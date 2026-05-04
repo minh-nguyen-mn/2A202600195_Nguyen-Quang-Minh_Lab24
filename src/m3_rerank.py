@@ -28,6 +28,8 @@ class CrossEncoderReranker:
             #           self._model = FlagReranker(self.model_name, use_fp16=True)
             # Option B: from sentence_transformers import CrossEncoder
             #           self._model = CrossEncoder(self.model_name)
+            from sentence_transformers import CrossEncoder
+            self._model = CrossEncoder(self.model_name)
             pass
         return self._model
 
@@ -42,7 +44,28 @@ class CrossEncoderReranker:
         # 5. Sort by score descending
         # 6. Return top_k RerankResult(text=..., original_score=doc["score"],
         #                              rerank_score=score, metadata=doc["metadata"], rank=i)
-        return []
+        # return []
+        model = self._load_model()
+
+        pairs = [(query, d["text"]) for d in documents]
+        scores = model.predict(pairs)
+
+        ranked = sorted(
+            zip(scores, documents),
+            key=lambda x: x[0],
+            reverse=True
+        )
+
+        return [
+            RerankResult(
+                text=d["text"],
+                original_score=d["score"],
+                rerank_score=s,
+                metadata=d["metadata"],
+                rank=i
+            )
+            for i, (s, d) in enumerate(ranked[:top_k])
+        ]
 
 
 class FlashrankReranker:
@@ -54,7 +77,33 @@ class FlashrankReranker:
         # TODO (optional): from flashrank import Ranker, RerankRequest
         # model = Ranker(); passages = [{"text": d["text"]} for d in documents]
         # results = model.rerank(RerankRequest(query=query, passages=passages))
-        return []
+        # return []
+        try:
+            from flashrank import Ranker
+        except Exception:
+            return []
+
+        if self._model is None:
+            self._model = Ranker()
+
+        passages = [{"text": d["text"]} for d in documents]
+
+        results = self._model.rerank(query, passages)
+
+        reranked = []
+        for i, r in enumerate(results[:top_k]):
+            doc = documents[r["index"]] if "index" in r else documents[i]
+            reranked.append(
+                RerankResult(
+                    text=doc["text"],
+                    original_score=doc.get("score", 0.0),
+                    rerank_score=float(r["score"]),
+                    metadata=doc.get("metadata", {}),
+                    rank=i + 1,
+                )
+            )
+
+        return reranked
 
 
 def benchmark_reranker(reranker, query: str, documents: list[dict], n_runs: int = 5) -> dict:
@@ -66,7 +115,19 @@ def benchmark_reranker(reranker, query: str, documents: list[dict], n_runs: int 
     #      reranker.rerank(query, documents)
     #      times.append((time.perf_counter() - start) * 1000)  # ms
     # 3. return {"avg_ms": mean(times), "min_ms": min(times), "max_ms": max(times)}
-    return {"avg_ms": 0, "min_ms": 0, "max_ms": 0}
+    # return {"avg_ms": 0, "min_ms": 0, "max_ms": 0}
+    times = []
+
+    for _ in range(n_runs):
+        start = time.perf_counter()
+        reranker.rerank(query, documents)
+        times.append((time.perf_counter() - start) * 1000)
+
+    return {
+        "avg_ms": sum(times) / len(times),
+        "min_ms": min(times),
+        "max_ms": max(times),
+    }
 
 
 if __name__ == "__main__":

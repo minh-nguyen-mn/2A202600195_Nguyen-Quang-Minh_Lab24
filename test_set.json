@@ -1,3 +1,22 @@
 [
-  {"question": "hihi cả nhà tự tạo testset bằng cơm nhé", "ground_truth": "Không kịp tạo luôn"},
+  {
+    "question": "Dữ liệu cá nhân theo Nghị định 13/2023/NĐ-CP là gì?",
+    "ground_truth": "Thông tin dưới dạng ký hiệu, chữ viết, chữ số, hình ảnh, âm thanh hoặc dạng tương tự gắn liền hoặc giúp xác định một cá nhân cụ thể"
+  },
+  {
+    "question": "Sự đồng ý của chủ thể dữ liệu phải được thể hiện như thế nào?",
+    "ground_truth": "Phải rõ ràng, tự nguyện, cụ thể và có thể thể hiện bằng văn bản, điện tử hoặc hành động xác nhận"
+  },
+  {
+    "question": "Thời hạn thông báo vi phạm dữ liệu cá nhân là bao lâu?",
+    "ground_truth": "Trong vòng 72 giờ kể từ khi xảy ra vi phạm"
+  },
+  {
+    "question": "Chuyển dữ liệu cá nhân ra nước ngoài cần điều kiện gì?",
+    "ground_truth": "Phải lập hồ sơ đánh giá tác động và gửi Bộ Công an trong vòng 60 ngày kể từ khi bắt đầu xử lý"
+  },
+  {
+    "question": "Dữ liệu cá nhân nhạy cảm bao gồm những loại nào?",
+    "ground_truth": "Quan điểm chính trị, tôn giáo, dữ liệu sức khỏe, sinh trắc học, thông tin đời sống tình dục, dữ liệu tội phạm và dữ liệu vị trí"
+  }
 ]

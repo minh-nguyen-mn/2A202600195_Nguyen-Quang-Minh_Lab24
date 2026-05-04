@@ -7,6 +7,7 @@ Test: pytest tests/test_m5.py
 """
 
 import os, sys
+import re
 from dataclasses import dataclass, field
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -55,7 +56,14 @@ def summarize_chunk(text: str) -> str:
     # Option B (không cần API — extractive):
     #   sentences = text.split(". ")
     #   return ". ".join(sentences[:2]) + "."  # Lấy 2 câu đầu
-    return ""
+    # return ""
+    sentences = [s.strip() for s in re.split(r"[.!?]\s+", text) if s.strip()]
+
+    if not sentences:
+        return text
+
+    # simple extractive summary (first 1–2 sentences)
+    return ". ".join(sentences[:2]).strip() + ("." if not text.endswith(".") else "")
 
 
 # ─── Technique 2: Hypothesis Question-Answer (HyQA) ─────
@@ -90,7 +98,29 @@ def generate_hypothesis_questions(text: str, n_questions: int = 3) -> list[str]:
     # Tại sao: User hỏi "nghỉ phép bao nhiêu ngày?" nhưng doc viết
     # "12 ngày làm việc mỗi năm" → vocabulary gap. HyQA bridge gap này
     # bằng cách index câu hỏi "Nhân viên được nghỉ bao nhiêu ngày?" cùng chunk.
-    return []
+    # return []
+    questions = []
+
+    # heuristic templates (no LLM needed)
+    templates = [
+        "Điều gì được đề cập trong đoạn văn?",
+        "Thông tin chính của đoạn này là gì?",
+        "Ai hoặc cái gì được nói đến trong nội dung?",
+        "Nội dung này nói về vấn đề gì?",
+    ]
+
+    sentences = [s.strip() for s in re.split(r"[.!?]", text) if s.strip()]
+
+    # generate a mix of template + keyword-based questions
+    for i in range(min(n_questions, len(templates))):
+        questions.append(templates[i])
+
+    # add keyword-based question if possible
+    if sentences:
+        first = sentences[0]
+        questions.append(f"Nội dung sau có ý nghĩa gì: '{first[:60]}...' ?")
+
+    return questions[:n_questions]
 
 
 # ─── Technique 3: Contextual Prepend (Anthropic style) ──
@@ -125,7 +155,13 @@ def contextual_prepend(text: str, document_title: str = "") -> str:
     # Ví dụ output:
     #   "Trích từ Chương 3 - Chính sách nghỉ phép, Sổ tay VinUni 2024.
     #    Nhân viên chính thức được nghỉ phép năm 12 ngày..."
-    return text
+    # return text
+    if document_title:
+        context = f"Trích từ tài liệu '{document_title}'."
+    else:
+        context = "Trích từ tài liệu nội bộ."
+
+    return f"{context} Nội dung liên quan:\n{text}"
 
 
 # ─── Technique 4: Auto Metadata Extraction ──────────────
@@ -157,7 +193,27 @@ def extract_metadata(text: str) -> dict:
     #
     # Metadata này gắn vào chunk → enable rich filtering khi search
     # VD: filter category="policy" + topic="nghỉ phép" → precision tăng
-    return {}
+    # return {}
+    text_lower = text.lower()
+
+    category = "general"
+    if any(k in text_lower for k in ["nghỉ", "phép", "leave"]):
+        category = "hr"
+    elif any(k in text_lower for k in ["mật khẩu", "password", "vpn"]):
+        category = "it"
+    elif any(k in text_lower for k in ["lương", "tiền", "salary"]):
+        category = "finance"
+
+    entities = []
+    for word in text.split():
+        if word.istitle() and len(word) > 2:
+            entities.append(word)
+
+    return {
+        "category": category,
+        "entities": list(set(entities)),
+        "language": "vi"
+    }
 
 
 # ─── Full Enrichment Pipeline ────────────────────────────
@@ -201,7 +257,26 @@ def enrich_chunks(
     #
     # Lưu ý: Enrichment = one-time cost (offline). Dùng model rẻ (gpt-4o-mini).
     # ROI cao vì cải thiện MỌI query sau đó.
+    for c in chunks:
+        text = c["text"]
+        meta = c.get("metadata", {})
 
+        summary = summarize_chunk(text) if "summary" in methods or "full" in methods else ""
+        questions = generate_hypothesis_questions(text) if "hyqa" in methods or "full" in methods else []
+        enriched_text = contextual_prepend(text, meta.get("source", "")) if "contextual" in methods or "full" in methods else text
+        auto_meta = extract_metadata(text) if "metadata" in methods or "full" in methods else {}
+
+        enriched.append(
+            EnrichedChunk(
+                original_text=text,
+                enriched_text=enriched_text,
+                summary=summary,
+                hypothesis_questions=questions,
+                auto_metadata={**meta, **auto_meta},
+                method="+".join(methods),
+            )
+        )
+        
     return enriched
 
 
