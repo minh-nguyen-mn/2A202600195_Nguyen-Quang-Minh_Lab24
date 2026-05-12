@@ -1,0 +1,50 @@
+name: RAG Eval Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run evaluation
+        run: |
+          python phase-a/ragas_eval.py
+
+      - name: Validate thresholds
+        run: |
+          python - <<EOF
+          import json
+          import sys
+
+          with open("phase-a/ragas_summary.json") as f:
+              data = json.load(f)
+
+          if data["faithfulness"] < 0.85:
+              sys.exit(1)
+
+          print("Thresholds passed")
+          EOF
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ragas-report
+          path: |
+            phase-a/ragas_results.csv
+            phase-a/ragas_summary.json

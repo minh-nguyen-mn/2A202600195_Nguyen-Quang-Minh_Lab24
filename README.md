@@ -1,105 +1,79 @@
-# Lab 18: Production RAG Pipeline
+# Lab 24 — Full Evaluation & Guardrail System
 
-**AICB-P2T3 · Ngày 18 · Production RAG**  
-**Giảng viên:** M.Sc Trần Minh Tú · **Thời gian:** 2 giờ
+## Overview
+
+This project implements a production-style evaluation and guardrail stack for a Retrieval-Augmented Generation (RAG) system. The repository includes automated RAGAS evaluation, LLM-as-Judge pipelines with calibration, multi-layer guardrails for input/output safety, and operational blueprint documentation.
+
+The evaluation system supports synthetic test set generation, 4-metric RAGAS scoring, failure clustering, pairwise and absolute LLM judging, Cohen’s kappa calibration, and quantified judge bias analysis. The guardrail stack includes Vietnamese-aware PII redaction, topic validation, adversarial attack filtering, and Llama Guard output moderation.
+
+The final integrated pipeline benchmarks latency across all guardrail layers and documents deployment architecture, SLOs, incident response workflows, and projected operational costs.
 
 ---
 
-## Tổng quan
-
-Lab gồm **2 phần**:
-
-| Phần | Hình thức | Thời gian | Mô tả |
-|------|-----------|-----------|-------|
-| **Phần A** | Cá nhân | 1.5 giờ | Implement 1 trong 4 modules |
-| **Phần B** | Nhóm (3–4 người) | 30 phút | Ghép modules → full pipeline → eval → present |
-
-```
-  Cá nhân                         Nhóm
-  ┌────────────┐
-  │ M1 Chunking│──┐
-  ├────────────┤  │    ┌──────────────────────────────┐
-  │ M2 Search  │──┼───▶│  Production RAG System        │
-  ├────────────┤  │    │  pipeline.py + RAGAS eval     │
-  │ M3 Rerank  │──┤    │  + failure analysis           │
-  ├────────────┤  │    └──────────────────────────────┘
-  │ M4 Eval    │──┘
-  └────────────┘
-```
-
-## Quick Start
+## Setup
 
 ```bash
-git clone <repo-url> && cd lab18-production-rag
-docker compose up -d                    # Qdrant
 pip install -r requirements.txt
-cp .env.example .env                    # Điền API keys
-python naive_baseline.py                # ⚠️ Chạy TRƯỚC để có baseline
 ```
 
-## Chạy toàn bộ
+Environment variables:
 
 ```bash
-python main.py                          # Naive + Production + So sánh
-python check_lab.py                     # Kiểm tra trước khi nộp
+export OPENAI_API_KEY=your_key
+export GROQ_API_KEY=your_key
 ```
 
-## Cấu trúc repo
+---
 
-```
-lab18-production-rag/
-├── README.md                   # File này
-├── ASSIGNMENT_INDIVIDUAL.md    # ★ Đề bài cá nhân (Phần A)
-├── ASSIGNMENT_GROUP.md         # ★ Đề bài nhóm (Phần B)
-├── RUBRIC.md                   # Hệ thống chấm điểm chi tiết
-│
-├── main.py                     # Entry point: chạy toàn bộ pipeline
-├── check_lab.py                # Kiểm tra định dạng trước khi nộp
-├── naive_baseline.py           # Baseline (chạy trước)
-├── config.py                   # Shared config
-├── requirements.txt            # Dependencies (pinned)
-├── docker-compose.yml          # Qdrant local
-├── .env.example                # API keys template
-│
-├── data/                       # Sample corpus tiếng Việt
-│   ├── sample_01.md
-│   ├── sample_02.md
-│   └── sample_03.md
-├── test_set.json               # 20 Q&A pairs
-│
-├── src/                        # ★ Scaffold code (có TODO markers)
-│   ├── m1_chunking.py          # Module 1: Chunking
-│   ├── m2_search.py            # Module 2: Hybrid Search
-│   ├── m3_rerank.py            # Module 3: Reranking
-│   ├── m4_eval.py              # Module 4: Evaluation
-│   └── pipeline.py             # Ghép nhóm
-│
-├── tests/                      # Auto-grading
-│   ├── test_m1.py
-│   ├── test_m2.py
-│   ├── test_m3.py
-│   └── test_m4.py
-│
-├── analysis/                   # ★ Deliverable
-│   ├── failure_analysis.md     # Phân tích failures (nhóm)
-│   ├── group_report.md         # Báo cáo nhóm
-│   └── reflections/            # Reflection cá nhân
-│       └── reflection_TEMPLATE.md
-│
-├── reports/                    # ★ Auto-generated (sau khi chạy main.py)
-│   ├── ragas_report.json
-│   └── naive_baseline_report.json
-│
-└── templates/                  # Templates gốc (backup)
-    ├── failure_analysis.md
-    └── group_report.md
+## Repo Structure
+
+```text
+phase-a/
+phase-b/
+phase-c/
+phase-d/
+.github/workflows/
 ```
 
-## Timeline
+---
 
-| Thời gian | Hoạt động |
-|-----------|-----------|
-| 0:00–0:15 | Setup + chạy `naive_baseline.py` |
-| 0:15–1:45 | **Phần A (cá nhân):** implement module → `pytest tests/test_m*.py` |
-| 1:45–2:15 | **Phần B (nhóm):** ghép → `python src/pipeline.py` → failure analysis |
-| 2:15–2:30 | Presentation 5 phút/nhóm |
+## Results Summary
+
+### Phase A — RAGAS
+
+- Synthetic test set generation
+- 4-metric evaluation:
+  - Faithfulness
+  - Answer Relevancy
+  - Context Precision
+  - Context Recall
+- Failure cluster analysis
+- CI/CD eval gate
+
+### Phase B — LLM-as-Judge
+
+- Pairwise judge with swap-and-average mitigation
+- Absolute rubric scoring
+- Human calibration with Cohen’s kappa
+- Judge bias quantification
+
+### Phase C — Guardrails
+
+- Vietnamese + English PII redaction
+- Topic scope validator
+- Adversarial attack testing
+- Llama Guard moderation
+- End-to-end latency benchmark
+
+### Phase D — Blueprint
+
+- SLO definitions
+- Defense-in-depth architecture
+- Incident playbooks
+- Monthly cost analysis
+
+---
+
+## Academic Integrity
+
+All AI-assisted prompts are documented in `prompts.md`.
